@@ -10,7 +10,7 @@ import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 
 
 
-@Mod(modid="GeoSharer", name="GeoSharer", version="1.7.2.0")
+@Mod(modid="GeoSharer", name="GeoSharer", version="1.7.10.0")
 public class mod_Geosharer
 {
         @Instance("GeoSharer")
