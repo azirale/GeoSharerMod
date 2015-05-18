@@ -2,6 +2,7 @@ package net.azirale.geosharer.mod;
 
 // Imports
 import java.lang.reflect.Field;
+import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -9,7 +10,6 @@ import java.util.Collections;
 import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ServerData;
-import cpw.mods.fml.client.FMLClientHandler;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 
@@ -20,6 +20,7 @@ public class GeoSharerCore {
     	private Minecraft mc;
     	private String outputFolderPath; 
     	private String serverName;
+    	private String serverIP;
     	
     	// Constructor
     	public GeoSharerCore()
@@ -31,7 +32,7 @@ public class GeoSharerCore {
     	}
     	
     	// Start tracking chunk data
-    	public void activate(World world)
+    	public void activate()
     	{
     		// Check if the mod is active already
     		if (isActive)
@@ -39,28 +40,22 @@ public class GeoSharerCore {
     			System.out.println("GeoSharer: Tried to re-activate while mod was already active");
     			return;
     		}
-    		// try and get the server data - in 1.7.2.10.12.0.1024 this is still obfuscated
-   			ServerData srvdata = mc.func_147104_D();
+    		// try and get the server data to see if we're in MP and also to store the name and IP for later use
+   			ServerData srvdata = mc.getCurrentServerData();
    			if (srvdata == null)
    			{
-   				System.out.println("GeoSharer: No ServerData - single player world?");
+   				System.err.println("GeoSharer: No ServerData - single player world?");
    				return;
    			}
-   			else this.serverName = srvdata.serverName.replaceAll("[^\\w]", "");
+   			this.serverName = srvdata.serverName.replaceAll("[^\\w]", "");
+   			this.serverIP = srvdata.serverIP;
    			this.isActive = true;
    			System.out.println("GeoSharer: mod is active");
     	}
     	
-    	
-    	
-    	// Stop tracking chunk data (and save)
-    	public void deactivate(World world)
+    	// grab chunk data before a world is unloaded
+    	public void catchUnload(World world)
     	{
-    		if (!isActive) // Already inactive
-    		{
-    			System.out.println("GeoSharer: Tried to deactivate while mod was already inactive");
-    			return;
-    		}
     		// Scan around the player for loaded chunks and add them to the save list
     		int playerX = (int)mc.thePlayer.posX/16;
     		int playerZ = (int)mc.thePlayer.posZ/16;
@@ -69,8 +64,18 @@ public class GeoSharerCore {
     			for (int z=-10;z<=10;++z)
     			{
     				Chunk newChunk = world.getChunkFromChunkCoords(playerX+x, playerZ+z);
-    				if (newChunk.isChunkLoaded) this.addChunk(newChunk);
+    				if (newChunk.isLoaded()) this.addChunk(newChunk);
     			}
+    		}
+    	}
+    	
+    	// Stop tracking chunk data (and save)
+    	public void deactivate()
+    	{
+    		if (!isActive) // Already inactive
+    		{
+    			System.err.println("GeoSharer: Tried to deactivate while mod was already inactive");
+    			return;
     		}
     		// output all stored chunks and deactivate
     		this.writeOut();
@@ -85,7 +90,7 @@ public class GeoSharerCore {
     		List<GeoSharerChunk> writeChunks = this.updateChunks;
     		System.out.println("Geosharer: Writing " + writeChunks.size()  + " chunks to '" + fileName + "'");
     		this.updateChunks = new ArrayList<GeoSharerChunk>();
-    		GeoWriter.writeToFile(fileName, writeChunks);
+    		GeoWriter.writeToFile(fileName, serverIP, writeChunks);
     	}
     	
     	// add a new chunk to stored data
@@ -94,7 +99,6 @@ public class GeoSharerCore {
     		if (!isActive) return; // Don't bother, the mod isn't active
     		if (chunk == null) return; // can't save a null object
     		if (chunk.isEmpty()) return; // no point saving an empty chunk
-    		if (chunk.worldObj.provider.dimensionId != 0) return; // only do overworld
     		GeoSharerChunk newChunk = GeoSharerChunk.CreateFromChunk(chunk);
     		updateChunks.remove(newChunk);
     		updateChunks.add(newChunk);

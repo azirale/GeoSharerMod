@@ -5,17 +5,19 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.zip.GZIPOutputStream;
 
 public class GeoWriter
 {
-	public static void writeToFile(String filePath, List<GeoSharerChunk> saveChunks)
+	public static void writeToFile(String filePath, String serverIP, List<GeoSharerChunk> saveChunks)
 	{
-		int version = 4;
+		int version = 5;
 		int numChunks = saveChunks.size();
 		int x[] = new int[numChunks];
 		int z[] = new int[numChunks];
+		int d[] = new int[numChunks];
 		long timestamp[] = new long[numChunks];
 		int chunkStarts[] = new int[numChunks];
 		
@@ -32,20 +34,27 @@ public class GeoWriter
 
 			
 			// write the metadata first
-			int thisStart=4 + 4 + (numChunks * (4+4+8+4)); // VERSION + NUMCHUNKS + [numchunks]*X+Z+TIME+START
+			byte[] serverIPBytes = serverIP.getBytes(Charset.forName("UTF-8"));
+			int serverIPBytesLength = serverIPBytes.length;
+			// VERSION + NUMCHUNKS + SERVERIPBYTESLENGTH + SERVERIPBYTES + [numchunks]*X+Z+D+TIME+START
+			int thisStart = 4 + 4 + 4 + serverIPBytesLength + (numChunks * (4+4+4+8+4)); 
 			for (int i=0;i<numChunks;++i)
 			{
 				GeoSharerChunk chunk = saveChunks.get(i);
 				x[i] = chunk.x;
 				z[i] = chunk.z;
+				d[i] = chunk.dimension;
 				timestamp[i] = chunk.timestamp;
 				chunkStarts[i]=thisStart;
 				thisStart+=chunk.bytes.length;
 			}
 			datStream.writeInt(version);
 			datStream.writeInt(numChunks);
+			datStream.writeInt(serverIPBytesLength);
+			datStream.write(serverIPBytes);
 			for (int i=0;i<numChunks;++i) { datStream.writeInt(x[i]); }
 			for (int i=0;i<numChunks;++i) { datStream.writeInt(z[i]); }
+			for (int i=0;i<numChunks;++i) { datStream.writeInt(d[i]); }
 			for (int i=0;i<numChunks;++i) { datStream.writeLong(timestamp[i]); }
 			for (int i=0;i<numChunks;++i) { datStream.writeInt(chunkStarts[i]); }
 			// now write the chunk data

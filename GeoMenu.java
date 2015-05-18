@@ -1,4 +1,4 @@
-/* Disabled until I figure out more about 172
+/* Disabled until I figure out more about 1.8
 
 package net.azirale.geosharer.mod;
 

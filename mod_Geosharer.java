@@ -1,16 +1,17 @@
-//package net.minecraft.src;
 package net.azirale.geosharer.mod;
 
-import cpw.mods.fml.common.Mod;
-import cpw.mods.fml.common.Mod.EventHandler;
-import cpw.mods.fml.common.Mod.Instance;
-import cpw.mods.fml.common.event.FMLInitializationEvent;
-import cpw.mods.fml.common.event.FMLPostInitializationEvent;
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.common.Mod.EventHandler;
+import net.minecraftforge.fml.common.Mod.Instance;
+import net.minecraftforge.fml.common.event.FMLInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.network.FMLNetworkEvent;
+import net.minecraftforge.fml.common.network.NetworkCheckHandler;
 
 
 
-@Mod(modid="GeoSharer", name="GeoSharer", version="1.7.10.0")
+@Mod(modid="GeoSharer", name="GeoSharer", version="1.8-1.5")
 public class mod_Geosharer
 {
         @Instance("GeoSharer")
@@ -26,17 +27,25 @@ public class mod_Geosharer
         }
         
         @EventHandler
-        public void preInit(FMLPreInitializationEvent event) { }
+        public void preInit(FMLPreInitializationEvent event)
+        {
+        	// No pre-init for this mod
+        }
         
         @EventHandler
         public void load(FMLInitializationEvent event) {
-        	// Open up the core of the mod - the class that handles the work
+        	// Core module
         	this.core = new GeoSharerCore();
-        	this.events = GeoEventHandler.CreateNew(this.core);
+        	// Event binding
+        	this.events = new GeoEventHandler(this.core);
+        	// GUI handling and commands (NYI)
         	//this.keys = GeoSharerKeybinder.CreateNew(this.core);
         	//this.gui = GeoGuiHandler.CreateNew(this, this.core);
         }
         
         @EventHandler
-        public void postInit(FMLPostInitializationEvent event) { }
+        public void postInit(FMLPostInitializationEvent event)
+        {
+        	// no post-init for this mod
+        }
 }
